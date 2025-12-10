@@ -102,6 +102,7 @@ function findVideoAndPlay(doc) {
     console.log("No HTMLDocument found");
     return;
   }
+  // play video
   const videos = doc.getElementsByTagName("video");
   if (videos.length > 0) {
     videos[0].play().catch((e) => {

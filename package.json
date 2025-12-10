@@ -1,6 +1,7 @@
 {
   "name": "helloworld",
   "main": "index.html",
+  "chromium-args": "--autoplay-policy=no-user-gesture-required",
   "window": {
     "width": 300,
     "height": 720
