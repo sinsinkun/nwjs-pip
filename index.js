@@ -61,7 +61,10 @@ window.dev = otherWindows;
 
 // closing console closes all other windows
 thisWindow.on('close', () => {
-  otherWindows.forEach((win) => win.ref?.close());
+  if (otherWindows.size > 0) {
+    otherWindows.forEach((win) => win?.close(true));
+    otherWindows.clear();
+  }
   thisWindow.close(true);
 });
 
@@ -72,9 +75,10 @@ thisWindow.on('close', () => {
  * @param {string} key 
  */
 function onWindowOpen(win, key) {
-  console.log("on window open");
   win.on('close', () => {
-    otherWindows.delete(key);
+    if (otherWindows.size > 0) {
+      otherWindows.delete(key);
+    }
     win.close(true);
   });
   otherWindows.set(key, win);
@@ -144,7 +148,6 @@ function updateNativeVideoSrc(win, path) {
       /** @type {HTMLVideoElement} */
       const videoEl = win.window?.document?.getElementById("video");
       videoEl.src = path;
-      console.log("video", videoEl);
     });
   }
 }
