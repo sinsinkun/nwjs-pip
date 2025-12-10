@@ -1,18 +1,33 @@
 // HTML components
+/** @type {HTMLInputElement} */
 const win1url = document.getElementById("win-1-url");
+/** @type {HTMLInputElement} */
+const win1native = document.getElementById("win-1-native");
+/** @type {HTMLInputElement} */
 const win1x = document.getElementById("win-1-x");
+/** @type {HTMLInputElement} */
 const win1y = document.getElementById("win-1-y");
+/** @type {HTMLInputElement} */
 const win1w = document.getElementById("win-1-w");
+/** @type {HTMLInputElement} */
 const win1h = document.getElementById("win-1-h");
-
+/** @type {HTMLInputElement} */
 const win2url = document.getElementById("win-2-url");
+/** @type {HTMLInputElement} */
+const win2native = document.getElementById("win-2-native");
+/** @type {HTMLInputElement} */
 const win2x = document.getElementById("win-2-x");
+/** @type {HTMLInputElement} */
 const win2y = document.getElementById("win-2-y");
+/** @type {HTMLInputElement} */
 const win2w = document.getElementById("win-2-w");
+/** @type {HTMLInputElement} */
 const win2h = document.getElementById("win-2-h");
-
+/** @type {HTMLDivElement} */
 const errorBox = document.getElementById("error-box");
+/** @type {HTMLButtonElement} */
 const openBtn = document.getElementById("open-btn");
+/** @type {HTMLButtonElement} */
 const startBtn = document.getElementById("start-btn");
 
 function displayError(str) {
@@ -40,12 +55,13 @@ if (!nw) {
 // window ref storage
 /** @type {NWWindowRef} */
 const thisWindow = nw.Window.get();
-/** @type {{ id: string, ref: NWWindowRef }[]} */
-let otherWindows = [];
+/** @type {Map<string, NWWindowRef>} */
+let otherWindows = new Map;
+window.dev = otherWindows;
 
 // closing console closes all other windows
 thisWindow.on('close', () => {
-  otherWindows.forEach(win => win.ref?.close());
+  otherWindows.forEach((win) => win.ref?.close());
   thisWindow.close(true);
 });
 
@@ -53,29 +69,33 @@ thisWindow.on('close', () => {
 /**
  * 
  * @param {NWWindowRef} win 
- * @param {string} id 
+ * @param {string} key 
  */
-function onWindowOpen(win, id) {
+function onWindowOpen(win, key) {
+  console.log("on window open");
   win.on('close', () => {
-    otherWindows = otherWindows.filter((win) => win.id !== id);
+    otherWindows.delete(key);
     win.close(true);
   });
-  otherWindows.push({ id, ref: win });
+  otherWindows.set(key, win);
 }
 
 /**
  * 
- * @param {string} id
+ * @param {string} key
+ * @returns {Window | undefined}
+ */
+function getWebWindow(key) {
+  return otherWindows.get(key);
+}
+
+/**
+ * 
+ * @param {string} key
  * @returns {HTMLDocument}
  */
-function getWebDocument(id) {
-  let doc;
-  otherWindows.forEach(win => {
-    if (win.id === id) {
-      doc = win.ref?.window?.document;
-    }
-  });
-  return doc;
+function getWebDocument(key) {
+  return otherWindows.get(key)?.window?.document;
 }
 
 /**
@@ -113,23 +133,46 @@ function findVideoAndPlay(doc) {
   }
 }
 
+/**
+ * 
+ * @param {NWWindowRef} win
+ * @param {string} path 
+ */
+function updateNativeVideoSrc(win, path) {
+  if (win?.window?.document) {
+    win?.window?.document.addEventListener("DOMContentLoaded", () => {
+      /** @type {HTMLVideoElement} */
+      const videoEl = win.window?.document?.getElementById("video");
+      videoEl.src = path;
+      console.log("video", videoEl);
+    });
+  }
+}
+
 // open windows
 openBtn.onclick = () => {
   if (win1url.value) {
+    let url = win1native.checked ? "native.html" : win1url.value;
     nw.Window.open(
-      win1url.value,
+      url,
       {
         width: getNumberFromField(win1w),
         height: getNumberFromField(win1h),
         x: getNumberFromField(win1x),
         y: getNumberFromField(win1y),
       },
-      (win) => onWindowOpen(win, "main")
+      (win) => {
+        onWindowOpen(win, "main");
+        if (win1native.checked) {
+          updateNativeVideoSrc(win, win1url.value);
+        }
+      }
     );
   }
   if (win2url.value) {
+    let url = win2native.checked ? "native.html" : win2url.value;
     nw.Window.open(
-      win2url.value,
+      url,
       {
         width: getNumberFromField(win2w),
         height: getNumberFromField(win2h),
@@ -137,7 +180,12 @@ openBtn.onclick = () => {
         y: getNumberFromField(win2y),
         always_on_top: true,
       },
-      (win) => onWindowOpen(win, "pip")
+      (win) => {
+        onWindowOpen(win, "pip");
+        if (win2native.checked) {
+          updateNativeVideoSrc(win, win2url.value);
+        }
+      }
     );
   }
 }
@@ -151,7 +199,10 @@ startBtn.onclick = () => {
   }
   const mainDoc = getWebDocument("main");
   const pipDoc = getWebDocument("pip");
-  window.dev = { mainDoc, pipDoc };
-  if (!!mainDoc) findVideoAndPlay(mainDoc);
-  if (!!pipDoc) findVideoAndPlay(pipDoc);
+  if (!!mainDoc) {
+    findVideoAndPlay(mainDoc);
+  }
+  if (!!pipDoc) {
+    findVideoAndPlay(pipDoc);
+  }
 }
