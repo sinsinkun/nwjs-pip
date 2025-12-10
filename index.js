@@ -58,6 +58,7 @@ thisWindow.on('close', () => {
 function onWindowOpen(win, id) {
   win.on('close', () => {
     otherWindows = otherWindows.filter((win) => win.id !== id);
+    win.close(true);
   });
   otherWindows.push({ id, ref: win });
 }
@@ -97,6 +98,10 @@ function getNumberFromField(field) {
  * @param {HTMLDocument} doc 
  */
 function findVideoAndPlay(doc) {
+  if (!doc) {
+    console.log("No HTMLDocument found");
+    return;
+  }
   const videos = doc.getElementsByTagName("video");
   if (videos.length > 0) {
     videos[0].play().catch((e) => {
@@ -146,6 +151,6 @@ startBtn.onclick = () => {
   const mainDoc = getWebDocument("main");
   const pipDoc = getWebDocument("pip");
   window.dev = { mainDoc, pipDoc };
-  findVideoAndPlay(mainDoc);
-  findVideoAndPlay(pipDoc);
+  if (!!mainDoc) findVideoAndPlay(mainDoc);
+  if (!!pipDoc) findVideoAndPlay(pipDoc);
 }
