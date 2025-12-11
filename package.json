@@ -5,5 +5,8 @@
   "window": {
     "width": 300,
     "height": 720
+  },
+  "scripts": {
+    "start": "start.bat"
   }
 }
